@@ -1,0 +1,12 @@
+[general]
+name=RockyCrop: GIS Automated exporter
+description=Automates grid creation, layout generation, and data export for Blender integration
+version=1.0.0
+qgisMinimumVersion=3.22
+author=BlondBeard Games (Red Division)
+email=venicdragon@gmail.com
+homepage=https://yourwebsite.com
+tracker=https://yourbugtracker.com
+repository=https://yourgithubrepo.com
+category=Plugins
+icon=icon.png
