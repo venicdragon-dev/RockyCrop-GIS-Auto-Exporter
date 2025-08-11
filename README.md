@@ -73,7 +73,7 @@ After export, the plugin folder will open automatically. Copy `blender_import.py
 
 ## Support
 
-For questions, feedback, or bug reports, visit [your GitHub repo link here](https://github.com/venicdragon-dev/RockyCrop-GIS-Auto-Exporter)].
+For questions, feedback, or bug reports, visit [RockyCrop: GIS Auto Exporter](https://github.com/venicdragon-dev/RockyCrop-GIS-Auto-Exporter)].
 
 ---
 
