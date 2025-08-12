@@ -8,7 +8,7 @@ import os
 import re
 import bmesh
 
-from bpy_extras.io_utils import ImportHelper
+from bpy_extras.io_utils import ImportHelper #helper class defines filename and invoke() function which calls the file selector
 from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty
 from bpy.types import Operator
 
@@ -16,6 +16,7 @@ from bpy.types import Operator
 mapfolder = None
 elvfolder = None
 crs = None
+log_path = r"C:\import_log.txt"
 
 # Clear scene
 bpy.ops.object.select_all(action='SELECT')
@@ -37,24 +38,24 @@ for mapfile in os.listdir(mapfolder):
         bpy.ops.importgis.georaster(
             filepath=elvpath,
             rastCRS=crs,
-            importMode="DEM"
+            importMode="DEM"  # Creates a terrain mesh
         )
         terrain = bpy.context.object
         terrain.name = f"Terrain_{fid}"
         
-        bpy.context.view_layer.objects.active = obj
-        obj.select_set(True)
+        bpy.context.view_layer.objects.active = terrain
+        terrain.select_set(True)
 
         # Apply each modifier in reverse order to avoid indexing issues
-        for mod in list(obj.modifiers):
+        for mod in list(terrain.modifiers):
             try:
                 bpy.ops.object.modifier_apply(modifier=mod.name)
-                print(f"Applied '{mod.name}' on '{obj.name}'")
+                print(f"Applied '{mod.name}' on '{terrain.name}'")
             except Exception as e:
-                print(f"Failed to apply '{mod.name}' on '{obj.name}': {e}")
+                print(f"Failed to apply")
 
             # Deselect object after processing
-            obj.select_set(False)
+            terrain.select_set(False)
                
         # === 2. APPLY VISUAL AS TEXTURE ===
         mappath = os.path.join(mapfolder, mapfile)
@@ -73,7 +74,7 @@ for mapfile in os.listdir(mapfolder):
         terrain.data.materials.append(mat)
        
         # === 3. FIX VISIBILITY & SCALE ===
-        terrain.scale = (1, 1, 1)
+        terrain.scale = (1000000, 1000000, 10)
         bpy.ops.object.transform_apply(scale=True)
        
         # Ensure object is visible
@@ -87,6 +88,6 @@ for area in bpy.context.screen.areas:
         for space in area.spaces:
             if space.type == 'VIEW_3D':
                 space.clip_start = 0.1
-                space.clip_end = 100000
+                space.clip_end = 100000  # Large enough for terrain
                 
 print("=== IMPORT COMPLETE ===")
