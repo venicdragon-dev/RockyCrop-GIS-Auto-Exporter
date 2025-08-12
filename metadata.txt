@@ -1,10 +1,13 @@
 [general]
-name=RockyCrop: GIS Automated exporter
-description=Automates grid creation, layout generation, and data export for Blender integration
+name=RockyCrop
+description=Automated grid creation, layout generation, and terrain export for Blender integration
 version=1.0.0
 qgisMinimumVersion=3.22
 author=BlondBeard Games (Red Division)
 email=venicdragon@gmail.com
+homepage=https://venicdragon.gumroad.com/l/RockyCrop
+https://github.com/venicdragon-dev/RockyCrop-GIS-Auto-Exporter/issues
 repository=https://github.com/venicdragon-dev/RockyCrop-GIS-Auto-Exporter
 category=Plugins
-icon=icon.png
+icon=/icons/icon.png
+about=RockyCrop automates terrain and visual map exports from QGIS for use in Blender and other 3D tools. Includes a Blender import script and full documentation.
