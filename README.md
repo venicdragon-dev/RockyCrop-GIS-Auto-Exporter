@@ -10,6 +10,7 @@ Before using RockyCrop, install these plugins via QGIS Plugin Manager:
 
 - **QuickMapServices** – for basemap imagery
 - **SRTMDownloader** – for elevation data
+- **BlenderGIS** - for importing the TIF files into Blender
 
 ---
 
@@ -59,7 +60,7 @@ Before using RockyCrop, install these plugins via QGIS Plugin Manager:
 
 ## Blender Import Script
 
-After export, the plugin folder will open automatically. Copy `blender_import.py` to a convenient location and run it in Blender to import your terrain tiles.
+After export, the plugin folder will open automatically. Copy `blender_import.py` to a convenient location and run it in Blender to import your terrain tiles. To do this, open blender and go to your scripting tab. Open `blender_import.py` and click the run button, this will import all of the visual files and elevation data, while applying the elevation data to the visual. So you have a nice elevated landscape in Blender.
 
 ---
 
