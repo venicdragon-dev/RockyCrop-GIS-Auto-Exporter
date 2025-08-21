@@ -11,7 +11,8 @@ def delay(ms):
     QTimer.singleShot(ms, loop.quit)
     loop.exec_()
 
-def run_export(layout_name, img_output_folder, elv_output_folder, dem_layer_name, log_path):
+def run_export(layout_name, img_output_folder, elv_output_folder, dem_layer_name, log_path,
+               include_osm_data=False, osm_features=None, osm_export_folder=""):
 
     # === CONFIGURATION ===
     layout_name = layout_name
@@ -19,6 +20,14 @@ def run_export(layout_name, img_output_folder, elv_output_folder, dem_layer_name
     elv_output_folder = elv_output_folder
     log_path = log_path
     dem_layer_name = dem_layer_name
+
+    # OSM feature-to-tag mapping
+    OSM_TAGS = {
+        "buildings": '["building"]',
+        "trees": '["natural"="tree"]',
+        "roads": '["highway"]',
+        "water": '["natural"="water"]'
+    }
 
     # === SETUP ===
     project = QgsProject.instance()
@@ -94,9 +103,11 @@ def run_export(layout_name, img_output_folder, elv_output_folder, dem_layer_name
         settings.dpi = 300
         settings.exportGeoTIFF = True
         result = exporter.exportToImage(visual_path, settings)
-        
+
+        if include_osm_data:
+            os.makedirs(osm_export_folder, exist_ok=True)
+
         if result != QgsLayoutExporter.Success:
-            
             print(f"{error_msg}")
             with open(log_path, "a") as log:
                 log.write(f"{error_msg}\n")
@@ -118,7 +129,7 @@ def run_export(layout_name, img_output_folder, elv_output_folder, dem_layer_name
             # Add small buffer to ensure we capture all elevation data
             buffered_extent = reprojected_extent.buffered(0.0002)  # ~20 meters at equator
             
-            # --- Clip DEM to tile extent ---
+            # Clip DEM to tile extent
             processing_params = {
                 'INPUT': dem_layer,
                 'PROJWIN': [
@@ -151,7 +162,57 @@ def run_export(layout_name, img_output_folder, elv_output_folder, dem_layer_name
             print(f"Tile {fid} exported: visual + elevation")
             with open(log_path, "a") as log:
                 log.write(f"Tile {fid} exported: visual + elevation\n")
-        
+
+        if include_osm_data and osm_features:
+            try:
+                # Get bounding box in WGS84 for Overpass
+                wgs84 = QgsCoordinateReferenceSystem("EPSG:4326")
+                xform_to_wgs = QgsCoordinateTransform(layout_crs, wgs84, transform_context)
+                bbox_wgs = xform_to_wgs.transformBoundingBox(extent)
+
+                # Build Overpass query
+                bbox_str = f"{bbox_wgs.yMinimum()},{bbox_wgs.xMinimum()},{bbox_wgs.yMaximum()},{bbox_wgs.xMaximum()}"
+                query_parts = []
+                for feature in osm_features:
+                    if feature in OSM_TAGS:
+                        tag = OSM_TAGS[feature]
+                        query_parts.append(f"way{tag}({bbox_str});")
+                        query_parts.append(f"relation{tag}({bbox_str});")
+
+                query = f"""
+                [out:json][timeout:25];
+                (
+                    {"".join(query_parts)}
+                );
+                out body;
+                >;
+                out skel qt;
+                """
+
+                # Send request
+                import requests
+                response = requests.post("https://overpass-api.de/api/interpreter", data={"data": query})
+                data = response.json()
+
+                # Save raw GeoJSON
+                geojson_path = os.path.join(osm_export_folder, f"map_{fid}_osm.geojson")
+                with open(geojson_path, "w", encoding="utf-8") as f:
+                    import json
+                    f.write(json.dumps(data))
+
+                print(f"Tile {fid} OSM data exported")
+                with open(log_path, "a") as log:
+                    log.write(f"Tile {fid} OSM data exported to {geojson_path}\n")
+
+            except Exception as osm_err:
+                error_msg = f"Failed to export OSM data for tile {fid}: {str(osm_err)}\n{traceback.format_exc()}"
+                print(error_msg)
+                with open(log_path, "a") as log:
+                    log.write(error_msg)
+
+        if include_osm_data:
+            log.write(f"OSM Export Folder: {osm_export_folder}\n")
+
         except Exception as err:
             error_msg = f"Failed to process elevation for tile {fid}: {str(err)}\n{traceback.format_exc()}"
             print(f"{error_msg}")

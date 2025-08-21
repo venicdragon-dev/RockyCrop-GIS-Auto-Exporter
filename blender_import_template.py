@@ -15,6 +15,7 @@ from bpy.types import Operator
 # Config
 mapfolder = None
 elvfolder = None
+osmfolder = None
 crs = None
 log_path = r"C:\import_log.txt"
 

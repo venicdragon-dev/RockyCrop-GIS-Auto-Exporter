@@ -35,6 +35,10 @@ class RunGeneration:
         if dialog.exec_():
             inputs = dialog.get_inputs()
 
+            self.include_osm_data = inputs.get("include_osm_data", False)
+            self.osm_features = inputs.get("osm_features", [])
+            self.osm_export_folder = inputs.get("osm_export_folder", "")
+
             # Assign plugin-level attributes
             self.grid_horizontal = inputs["horizontal_spacing"]
             self.grid_vertical = inputs["vertical_spacing"]
