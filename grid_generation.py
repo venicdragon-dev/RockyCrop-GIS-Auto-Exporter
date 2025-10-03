@@ -16,7 +16,6 @@ from PyQt5.QtCore import QVariant, Qt
 from qgis.PyQt.QtGui import QColor
 from qgis.utils import iface
 from qgis.PyQt.QtWidgets import QMessageBox
-from .plugin_dialog import *
 
 def convert_to_meters(value, unit):
     conversions = {
@@ -60,7 +59,7 @@ def run_grid_generation(horizontal_spacing, vertical_spacing, horizontal_unit, v
         return None
 
     if not is_projected:
-        # Reject non-degree units in geographic CRS
+
         anchor = QgsPointXY((xmin + xmax) / 2, (ymin + ymax) / 2)
 
         if horizontal_unit != "degrees":

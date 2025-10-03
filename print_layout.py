@@ -52,9 +52,7 @@ def create_print_layout(project, coverage_layer, layout_name, page_width_mm, pag
         atlas.setCoverageLayer(coverage_layer)
         atlas.setPageNameExpression('"id"')
         map_item.setAtlasDriven(True)
-        map_item.setAtlasScalingMode(QgsLayoutItemMap.Fixed)
         map_item.setAtlasMargin(0.0)
-        
 
         # Safe zoom to first feature's extent
         features = list(coverage_layer.getFeatures())
@@ -77,7 +75,7 @@ def create_print_layout(project, coverage_layer, layout_name, page_width_mm, pag
         else:
             QMessageBox.warning(None, "Atlas Error", "No features found in coverage layer.")
             return
-    
+
     def lock(map_item):
         # Lock the actual layer set
         map_item.setLayers(map_item.layers())
@@ -93,4 +91,5 @@ def create_print_layout(project, coverage_layer, layout_name, page_width_mm, pag
 
     lock(map_item)
 
-    print(f"Layout '{layout_name}' created at {page_width_mm}mm × {page_height_mm}mm. Atlas: {'enabled' if atlas_enabled else 'disabled'}")
+    print(
+        f"Layout '{layout_name}' created at {page_width_mm}mm × {page_height_mm}mm. Atlas: {'enabled' if atlas_enabled else 'disabled'}")
