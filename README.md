@@ -74,8 +74,8 @@ After export, the plugin folder will open automatically. Copy `blender_import.py
 
 ## Support
 
-For questions, feedback, or bug reports, visit [RockyCrop: GIS Auto Exporter](https://github.com/venicdragon-dev/RockyCrop-GIS-Auto-Exporter).
-Get paid support for a more on hand approach, visit [RockyCrop GumRoad](https://venicdragon.gumroad.com/l/RockyCrop)
+- For questions, feedback, or bug reports, visit [RockyCrop: GIS Auto Exporter](https://github.com/venicdragon-dev/RockyCrop-GIS-Auto-Exporter).
+- Get your Premium version with automated OSM data download and export, visit [RockyCrop GumRoad](https://venicdragon.gumroad.com/l/RockyCrop).
 
 ---
 
