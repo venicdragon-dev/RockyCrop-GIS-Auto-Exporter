@@ -1,8 +1,10 @@
 from qgis.PyQt import QtWidgets, QtGui
 from qgis.PyQt.QtCore import Qt
 from qgis.utils import iface
-from qgis.core import QgsCoordinateReferenceSystem, QgsProject, QgsRectangle, QgsMapLayer
-from PyQt5.QtWidgets import QDialog, QLineEdit, QLabel, QPushButton, QFileDialog
+from qgis.core import QgsCoordinateReferenceSystem, QgsProject, QgsRectangle, QgsMapLayer, QgsRasterLayer
+from PyQt5.QtWidgets import QDialog, QLineEdit, QLabel, QPushButton, QFileDialog, QMessageBox, QHBoxLayout
+from PyQt5.QtCore import QThread, pyqtSignal, QObject, QLocale, QCoreApplication
+from osgeo import gdal
 import os
 import traceback
 from .grid_generation import run_grid_generation
@@ -10,13 +12,14 @@ from .draw_on_map import DrawOnMap, StartDrawOnMap
 from .print_layout import create_print_layout
 from .map_export import run_export
 from .set_blender_file import prepare_blender_script
-
+from .i18n_utils import save_locale_choice, load_saved_locale, load_json_locale
 
 class PluginDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, json_i18n=None):
         super().__init__(parent)
         self.setWindowTitle("RockyCrop Auto Exporter")
         self.setMinimumSize(900, 800)
+        self._json_i18n = json_i18n or {}
 
         # == Form Layout Variables == #
 
@@ -40,6 +43,8 @@ class PluginDialog(QtWidgets.QDialog):
         self.elevation_layout = QtWidgets.QHBoxLayout()
         self.button_layout = QtWidgets.QHBoxLayout()
         self.content_layout = QtWidgets.QHBoxLayout()
+        self.lang_btn_layout = QtWidgets.QHBoxLayout()
+        lang_row = QtWidgets.QHBoxLayout()
 
         # -- Group Boxes -- #
         grid_settings_box = QtWidgets.QGroupBox("Grid Settings")
@@ -50,6 +55,7 @@ class PluginDialog(QtWidgets.QDialog):
         self.osm_nodes_box = QtWidgets.QGroupBox("Nodes Options")
         self.osm_ways_box = QtWidgets.QGroupBox("Ways Options")
         self.osm_relations_box = QtWidgets.QGroupBox("Relations Options")
+        self.lang_group = QtWidgets.QGroupBox("Language")
 
         # -- QV Box Layouts -- #
         self.osm_nodes_layout = QtWidgets.QVBoxLayout()
@@ -57,6 +63,7 @@ class PluginDialog(QtWidgets.QDialog):
         self.osm_relations_layout = QtWidgets.QVBoxLayout()
         self.osm_sidebar_layout = QtWidgets.QVBoxLayout()
         main_layout = QtWidgets.QVBoxLayout()
+        lang_group_layout = QtWidgets.QVBoxLayout()
 
         # -- Grid Layouts -- #
         self.osm_nodes_grid = QtWidgets.QGridLayout()
@@ -75,6 +82,7 @@ class PluginDialog(QtWidgets.QDialog):
         self.horizontal_unit = QtWidgets.QComboBox()
         self.vertical_unit = QtWidgets.QComboBox()
         self.crs_options = QtWidgets.QComboBox()
+        self.lang_combo = QtWidgets.QComboBox()
 
         # -- Widgets -- #
         self.extent_buttons_wid = QtWidgets.QWidget()
@@ -104,6 +112,7 @@ class PluginDialog(QtWidgets.QDialog):
         self.osm_natural_label = QtWidgets.QLabel("Natural & Land Use")
         self.osm_amenities_label = QtWidgets.QLabel("Amenities & Services")
         self.osm_mobility_label = QtWidgets.QLabel("Mobility")
+        self.lang_label = QtWidgets.QLabel("Language: ")
 
         # -- Set Ranges -- #
         self.horizontal_spacing.setRange(0.000001, 999999)
@@ -139,6 +148,7 @@ class PluginDialog(QtWidgets.QDialog):
         self.visual_folder_button = QtWidgets.QPushButton("Browse...")
         self.run_button = QtWidgets.QPushButton("Start Process")
         self.cancel_button = QtWidgets.QPushButton("Cancel")
+        self.lang_apply_button = QtWidgets.QPushButton("Apply")
 
         # === Functionality === #
 
@@ -158,6 +168,7 @@ class PluginDialog(QtWidgets.QDialog):
         self.run_button.clicked.connect(self.generate_grid)
         self.visual_folder_button.clicked.connect(self.select_visual_folder)
         self.elevation_folder_button.clicked.connect(self.select_elevation_folder)
+        self.lang_apply_button.clicked.connect(self.on_lang_change)
 
         # -- Force Sizes -- #
         self.extent_button.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
@@ -165,6 +176,26 @@ class PluginDialog(QtWidgets.QDialog):
 
         # -- Change drop down -- #
         self.crs_options.currentIndexChanged.connect(self.updateGridUnit)
+
+        # -- Add locales to Language Dropdown -- #
+
+        # available locales: display text, item data = locale code
+        self._available_locales = [
+            ("English - en", "en"),
+            ("Português (Brazil) - pt_BR", "pt_BR"),
+            ("Español - es", "es"),
+        ]
+        for display, code in self._available_locales:
+            self.lang_combo.addItem(display, code)
+
+        # load saved locale and select it
+        try:
+            saved_code = load_saved_locale() or QLocale.system().name()
+            idx = self.lang_combo.findData(saved_code)
+            if idx >= 0:
+                self.lang_combo.setCurrentIndex(idx)
+        except Exception:
+            pass
 
         # === Set Up UI layout === #
 
@@ -192,7 +223,18 @@ class PluginDialog(QtWidgets.QDialog):
         self.button_layout.addWidget(self.run_button)
         self.button_layout.addWidget(self.cancel_button)
 
+        # -- Add Language Widgets -- #
+        lang_row.addWidget(self.lang_label)
+        lang_row.addWidget(self.lang_combo)
+        lang_row.addWidget(self.lang_apply_button)
+        lang_row.addStretch()
+
         # -- Add Rows -- #
+
+        # -- Add Language Rows -- #
+
+        lang_group_layout.addLayout(lang_row)
+        self.lang_group.setLayout(lang_group_layout)
 
         # Grid Layout
         grid_size_layout.addRow(self.grid_horizontal_label, self.hor_inputs)
@@ -229,6 +271,7 @@ class PluginDialog(QtWidgets.QDialog):
         form_layout.addRow(manual_extent_group_box)
         form_layout.addRow(print_layout_settings_box)
         form_layout.addRow(export_settings_box)
+        form_layout.addRow(self.lang_group)
 
         # Horizontal layout to hold form + OSM sidebar
         self.content_layout.addLayout(form_layout)
@@ -242,6 +285,72 @@ class PluginDialog(QtWidgets.QDialog):
         main_layout.addLayout(self.content_layout)
         main_layout.addLayout(self.button_layout)
         self.setLayout(main_layout)
+
+        try:
+            self.retranslate_ui()
+        except Exception:
+            pass
+
+    def on_lang_change(self):
+        code = self.lang_combo.currentData()
+        if not code:
+            return
+        save_locale_choice(code)
+
+        json_map = load_json_locale(code, plugin_dir=os.path.dirname(__file__))
+        if not json_map:
+            QMessageBox.warning(self, "Language not loaded", f"Translation file not found for selected language ({code}).")
+            return
+
+        # store JSON map for retranslate_ui and apply immediately
+        self._json_i18n = json_map
+        try:
+            self.retranslate_ui()
+            QMessageBox.information(self, "Language changed", "Language applied.")
+        except Exception:
+            QMessageBox.information(self, "Language changed", "Language saved. Restart the plugin or QGIS to apply fully.")
+
+    def retranslate_ui(self):
+        # pick JSON map (cached if earlier stored)
+        code = load_saved_locale() or QLocale.system().name()
+        json_map = getattr(self, "_json_i18n", None)
+        if json_map is None:
+            json_map = load_json_locale(code, plugin_dir=os.path.dirname(__file__))
+            self._json_i18n = json_map or {}
+
+        def t(s):
+            return self._json_i18n.get(s, s)
+
+        # Window title and programmatic labels/buttons
+        self.setWindowTitle(t("RockyCrop Auto Exporter"))
+        self.grid_horizontal_label.setText(t("Horizontal spacing:"))
+        self.grid_vertical_label.setText(t("Vertical spacing:"))
+        self.grid_crs_label.setText(t("CRS (EPSG Code):"))
+        self.horizontal_spacing_label.setText(t("Degrees"))
+        self.vertical_spacing_label.setText(t("Degrees"))
+        self.layout_name_label.setText(t("Layout Name:"))
+        self.page_width_label.setText(t("Page Width (mm):"))
+        self.page_height_label.setText(t("Page Height (mm):"))
+        self.visual_folder_label.setText(t("Visual TIF Folder:"))
+        self.elevation_folder_label.setText(t("Elevation TIF Folder:"))
+        self.osm_export_label.setText(t("OSM Layer Export"))
+        self.lang_label.setText(t("Language:"))
+        self.lang_apply_button.setText(t("Apply"))
+        self.extent_choose_label.setText(t("Choose extent:"))
+        self.extent_button.setText(t("Use Current Map Extent"))
+        self.draw_extent_button.setText(t("Draw Extent on Map"))
+        self.run_button.setText(t("Start Process"))
+        self.cancel_button.setText(t("Cancel"))
+
+        # update combo display texts if you prefer translated names there
+        for i in range(self.lang_combo.count()):
+            code = self.lang_combo.itemData(i)
+            if code == "en":
+                self.lang_combo.setItemText(i, t("English - en"))
+            elif code == "pt_BR":
+                self.lang_combo.setItemText(i, t("Português (Brasil) - pt_BR"))
+            elif code == "es":
+                self.lang_combo.setItemText(i, t("Español - es"))
 
     def updateGridUnit(self):
         selected_crs = self.crs_options.currentText()
