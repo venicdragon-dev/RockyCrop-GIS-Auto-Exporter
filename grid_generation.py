@@ -80,7 +80,7 @@ def run_grid_generation(horizontal_spacing, vertical_spacing, horizontal_unit, v
     if not layer.isValid():
         print("Layer is invalid! Check CRS or URI formatting.")
         return None
-    
+
     max_features = 100000
     estimated_features = cols * rows
 
@@ -96,7 +96,7 @@ def run_grid_generation(horizontal_spacing, vertical_spacing, horizontal_unit, v
 
         if response == QMessageBox.No:
             return None
-    
+
     provider = layer.dataProvider()
     fields = QgsFields()
     fields.append(QgsField("id", QVariant.Int))

@@ -27,9 +27,7 @@ class PluginDialog(QtWidgets.QDialog):
         grid_size_layout = QtWidgets.QFormLayout()
         extent_layout = QtWidgets.QFormLayout()
         print_layout_layout = QtWidgets.QFormLayout()
-        osm_settings_layout = QtWidgets.QFormLayout()
         export_settings_layout = QtWidgets.QFormLayout()
-        start_process_layout = QtWidgets.QFormLayout()
         form_layout = QtWidgets.QFormLayout()
 
         # -- QH Box Layouts -- #
@@ -37,8 +35,6 @@ class PluginDialog(QtWidgets.QDialog):
         self.ver_inputs = QtWidgets.QHBoxLayout()
         self.extent_buttons = QtWidgets.QHBoxLayout()
         self.srtm_layer = QtWidgets.QHBoxLayout()
-        self.osm_export_layout = QtWidgets.QHBoxLayout()
-        self.osm_objecttypes_layout = QtWidgets.QHBoxLayout()
         self.visual_layout = QtWidgets.QHBoxLayout()
         self.elevation_layout = QtWidgets.QHBoxLayout()
         self.button_layout = QtWidgets.QHBoxLayout()
@@ -51,24 +47,12 @@ class PluginDialog(QtWidgets.QDialog):
         print_layout_settings_box = QtWidgets.QGroupBox("Print Layout settings")
         manual_extent_group_box = QtWidgets.QGroupBox("Manual Extent Coordinates")
         export_settings_box = QtWidgets.QGroupBox("Export Settings")
-        self.osm_options_groupbox = QtWidgets.QGroupBox("OSM Export Filters")
-        self.osm_nodes_box = QtWidgets.QGroupBox("Nodes Options")
-        self.osm_ways_box = QtWidgets.QGroupBox("Ways Options")
-        self.osm_relations_box = QtWidgets.QGroupBox("Relations Options")
+        self.osm_options_groupbox = QtWidgets.QGroupBox("OSM Export Filters (Premium only)")
         self.lang_group = QtWidgets.QGroupBox("Language")
 
         # -- QV Box Layouts -- #
-        self.osm_nodes_layout = QtWidgets.QVBoxLayout()
-        self.osm_ways_layout = QtWidgets.QVBoxLayout()
-        self.osm_relations_layout = QtWidgets.QVBoxLayout()
-        self.osm_sidebar_layout = QtWidgets.QVBoxLayout()
         main_layout = QtWidgets.QVBoxLayout()
         lang_group_layout = QtWidgets.QVBoxLayout()
-
-        # -- Grid Layouts -- #
-        self.osm_nodes_grid = QtWidgets.QGridLayout()
-        self.osm_ways_grid = QtWidgets.QGridLayout()
-        self.osm_relations_grid = QtWidgets.QGridLayout()
 
         # === UI Box declaration === #
 
@@ -106,12 +90,6 @@ class PluginDialog(QtWidgets.QDialog):
         self.elevation_srtm_label = QtWidgets.QLabel("SRTM Layer name:")
         self.visual_folder_label = QtWidgets.QLabel("Visual TIF Folder:")
         self.elevation_folder_label = QtWidgets.QLabel("Elevation TIF Folder:")
-        self.osm_export_label = QtWidgets.QLabel("OSM Layer Export")
-        self.osm_objecttypes_label = QtWidgets.QLabel("Object Types")
-        self.osm_infrastructure_label = QtWidgets.QLabel("Infrastructure")
-        self.osm_natural_label = QtWidgets.QLabel("Natural & Land Use")
-        self.osm_amenities_label = QtWidgets.QLabel("Amenities & Services")
-        self.osm_mobility_label = QtWidgets.QLabel("Mobility")
         self.lang_label = QtWidgets.QLabel("Language: ")
 
         # -- Set Ranges -- #
@@ -140,6 +118,9 @@ class PluginDialog(QtWidgets.QDialog):
         self.elevation_srtm_input = QtWidgets.QLineEdit()
         self.visual_folder_input = QtWidgets.QLineEdit()
         self.elevation_folder_input = QtWidgets.QLineEdit()
+
+        # -- Atlas Checkbox - Do not change or remove -- #
+        self.atlas_checkbox = QtWidgets.QCheckBox("Enable Atlas")
 
         # Extent Buttons
         self.extent_button = QtWidgets.QPushButton("Use Current Map Extent")
@@ -257,7 +238,6 @@ class PluginDialog(QtWidgets.QDialog):
         export_settings_layout.addRow(self.elevation_srtm_label, self.elevation_srtm_input)
         export_settings_layout.addRow(self.visual_folder_label, self.visual_layout)
         export_settings_layout.addRow(self.elevation_folder_label, self.elevation_layout)
-        export_settings_layout.addRow(self.osm_export_label, self.osm_export_layout)
 
         # -- Setting Layouts -- #
 
@@ -333,7 +313,7 @@ class PluginDialog(QtWidgets.QDialog):
         self.page_height_label.setText(t("Page Height (mm):"))
         self.visual_folder_label.setText(t("Visual TIF Folder:"))
         self.elevation_folder_label.setText(t("Elevation TIF Folder:"))
-        self.osm_export_label.setText(t("OSM Layer Export"))
+        self.osm_export_label.setText(t("OSM Layer Export (Premium Only)"))
         self.lang_label.setText(t("Language:"))
         self.lang_apply_button.setText(t("Apply"))
         self.extent_choose_label.setText(t("Choose extent:"))
@@ -437,9 +417,6 @@ class PluginDialog(QtWidgets.QDialog):
         epsg_code = crs_text.split(" ")[0]
         grid_crs = QgsCoordinateReferenceSystem(epsg_code)
         crs_str = grid_crs.authid()
-        log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "export_log.txt")
-
-        # Setting the OSM filter array
 
         print(f"Selected CRS text: '{self.crs_options.currentText()}'")
         print(f"Extracted CRS authid: '{crs_str}'")

@@ -1,7 +1,6 @@
 {
   "Language:": "Idioma:",
   "Apply": "Aplicar",
-  "Use system locale": "Usar configuración regional del sistema",
   "RockyCrop Auto Exporter": "RockyCrop Exportador Automático",
   "Horizontal spacing:": "Espaciado horizontal:",
   "Vertical spacing:": "Espaciado vertical:",
@@ -12,7 +11,7 @@
   "Page Height (mm):": "Altura de página (mm):",
   "Visual TIF Folder:": "Carpeta TIF Visual:",
   "Elevation TIF Folder:": "Carpeta TIF de Elevación:",
-  "OSM Layer Export": "Exportación de capas OSM",
+  "OSM Layer Export (Premium Only)": "Exportación de capas OSM (Solo para usuarios Premium)",
   "Choose extent:": "Elegir extensión:",
   "Use Current Map Extent": "Usar extensión actual del mapa",
   "Draw Extent on Map": "Dibujar extensión en el mapa",

@@ -15,8 +15,7 @@ from bpy.types import Operator
 # Config
 mapfolder = None
 elvfolder = None
-crs = None
-log_path = r"F:\import_log.txt"
+crs = "EPSG:3857"
 
 # Clear scene
 bpy.ops.object.select_all(action='SELECT')
